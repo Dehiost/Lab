@@ -1,0 +1,71 @@
+version: '3.9'
+
+networks:
+  l2_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.2.0/24
+
+  l3_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.3.0/24
+
+services:
+
+  router:
+    build: ./router/
+    privileged: true
+    restart: unless-stopped
+    networks:
+      l2_network:
+        ipv4_address: 192.168.2.254
+      l3_network:
+        ipv4_address: 192.168.3.254
+
+  scada:
+    build: ./scada/
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    networks:
+      l3_network:
+        ipv4_address: 192.168.3.10
+    ports:
+      - '1881:1881'
+    volumes:
+      - scada-data:/usr/src/app/FUXA/server/_appdata
+
+  plc:
+    build: ./plc/
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    networks:
+      l2_network:
+        ipv4_address: 192.168.2.10
+    ports:
+      - "8080:8080"
+    volumes:
+      - plc-data:/workdir/webserver
+
+  kali:
+    build: ./kali/
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    privileged: true
+    restart: unless-stopped
+    networks:
+      l3_network:
+        ipv4_address: 192.168.3.11
+    ports:
+      - "2222:22"    
+      - "3443:3443"   
+      - "3389:3389" 
+
+volumes:
+  scada-data:
+  plc-data:

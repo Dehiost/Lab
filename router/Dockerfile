@@ -1,0 +1,1 @@
+FROM zakharbz/labshock-router:v1.0.0
